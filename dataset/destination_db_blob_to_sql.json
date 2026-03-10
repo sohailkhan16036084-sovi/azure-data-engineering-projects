@@ -1,0 +1,48 @@
+{
+	"name": "destination_db_blob_to_sql",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_SQLDB",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "OrderDate",
+				"type": "date"
+			},
+			{
+				"name": "Category",
+				"type": "varchar"
+			},
+			{
+				"name": "TotalAmount",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "OrderCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "SourceCount",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "LoadTimestamp",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "DailySalesSummary"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,118 @@
+{
+	"name": "DF_Combine_Sales",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "online_sales",
+						"type": "DatasetReference"
+					},
+					"name": "online"
+				},
+				{
+					"dataset": {
+						"referenceName": "stores_sales",
+						"type": "DatasetReference"
+					},
+					"name": "stores"
+				},
+				{
+					"dataset": {
+						"referenceName": "app_sales",
+						"type": "DatasetReference"
+					},
+					"name": "app"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "destination_db_blob_to_sql",
+						"type": "DatasetReference"
+					},
+					"name": "sinktosql"
+				}
+			],
+			"transformations": [
+				{
+					"name": "unionall"
+				},
+				{
+					"name": "addsourcecolumn"
+				},
+				{
+					"name": "filtervalidrows"
+				},
+				{
+					"name": "aggregatebycategory"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          OrderID as short,",
+				"          OrderDate as date,",
+				"          CustomerID as string,",
+				"          Amount as double,",
+				"          Product as string,",
+				"          Category as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> online",
+				"source(output(",
+				"          OrderID as short,",
+				"          OrderDate as date,",
+				"          CustomerID as string,",
+				"          Amount as double,",
+				"          Product as string,",
+				"          Category as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> stores",
+				"source(output(",
+				"          OrderID as short,",
+				"          OrderDate as date,",
+				"          CustomerID as string,",
+				"          Amount as double,",
+				"          Product as string,",
+				"          Category as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> app",
+				"app, online, stores union(byName: true)~> unionall",
+				"unionall derive(SourceSystem = case(endsWith(toString(byName('OrderID')), '1'), 'Online',",
+				"     endsWith(toString(byName('OrderID')), '2'), 'Stores',",
+				"     'App')) ~> addsourcecolumn",
+				"addsourcecolumn filter(toDecimal(Amount) > 0 && !isNull(CustomerID)) ~> filtervalidrows",
+				"filtervalidrows aggregate(groupBy(OrderDate,",
+				"          Category),",
+				"     TotalAmount = sum(Amount),",
+				"          OrderCount = count(OrderID),",
+				"          SourceCount = countDistinct(SourceSystem)) ~> aggregatebycategory",
+				"aggregatebycategory sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          OrderDate as date,",
+				"          Category as string,",
+				"          TotalAmount as decimal(10,2),",
+				"          OrderCount as integer,",
+				"          SourceCount as integer,",
+				"          LoadTimestamp as timestamp",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     truncate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sinktosql"
+			]
+		}
+	}
+}

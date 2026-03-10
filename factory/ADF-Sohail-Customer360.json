@@ -1,0 +1,9 @@
+{
+	"name": "ADF-Sohail-Customer360",
+	"location": "uksouth",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "e01ef3e1-696e-40b2-8c52-4aff2b0b35b7",
+		"tenantId": "c36bc9e1-1361-4dd0-a239-db5871240d52"
+	}
+}
