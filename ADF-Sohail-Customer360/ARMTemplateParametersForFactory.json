@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "ADF-Sohail-Customer360"
+		},
+		"LS_BlobStorage_connectionString": {
+			"value": ""
+		},
+		"LS_SQLDB_password": {
+			"value": ""
+		},
+		"LS_SQLDB_properties_typeProperties_server": {
+			"value": "sohail-sql-server.database.windows.net"
+		},
+		"LS_SQLDB_properties_typeProperties_database": {
+			"value": "SalesDB"
+		},
+		"LS_SQLDB_properties_typeProperties_userName": {
+			"value": "CloudSA9bb90d82"
+		}
+	}
+}

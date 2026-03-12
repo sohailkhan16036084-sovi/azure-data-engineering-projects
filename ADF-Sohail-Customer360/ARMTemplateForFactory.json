@@ -1,0 +1,592 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "ADF-Sohail-Customer360"
+		},
+		"LS_BlobStorage_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_BlobStorage'"
+		},
+		"LS_SQLDB_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'LS_SQLDB'"
+		},
+		"LS_SQLDB_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "sohail-sql-server.database.windows.net"
+		},
+		"LS_SQLDB_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "SalesDB"
+		},
+		"LS_SQLDB_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "CloudSA9bb90d82"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_Customer360')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Check_Online_File",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "online_sales",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"exists"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "Check_Stores_File",
+						"type": "GetMetadata",
+						"dependsOn": [
+							{
+								"activity": "Check_Online_File",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "stores_sales",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"exists"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "Check_App_File",
+						"type": "GetMetadata",
+						"dependsOn": [
+							{
+								"activity": "Check_Stores_File",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "app_sales",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"exists"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "If Condition1",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "Check_App_File",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@and(\n    and(\n        activity('Check_Online_File').output.exists,\n        activity('Check_Stores_File').output.exists\n    ),\n    activity('Check_App_File').output.exists\n)",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "DF_Combine_Sales",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_Combine_Sales",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"online": {},
+									"stores": {},
+									"app": {},
+									"sinktosql": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"ProcessingDate": {
+						"type": "string",
+						"defaultValue": "2024-03-15"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-02-27T15:02:09Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/online_sales')]",
+				"[concat(variables('factoryId'), '/datasets/stores_sales')]",
+				"[concat(variables('factoryId'), '/datasets/app_sales')]",
+				"[concat(variables('factoryId'), '/dataflows/DF_Combine_Sales')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/app_sales')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_BlobStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "app_sales_2024-03-15.csv",
+						"container": "input-data"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "OrderID",
+						"type": "String"
+					},
+					{
+						"name": "OrderDate",
+						"type": "String"
+					},
+					{
+						"name": "CustomerID",
+						"type": "String"
+					},
+					{
+						"name": "Amount",
+						"type": "String"
+					},
+					{
+						"name": "Product",
+						"type": "String"
+					},
+					{
+						"name": "Category",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_BlobStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/destination_db_blob_to_sql')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_SQLDB",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "OrderDate",
+						"type": "date"
+					},
+					{
+						"name": "Category",
+						"type": "varchar"
+					},
+					{
+						"name": "TotalAmount",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "OrderCount",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "SourceCount",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "LoadTimestamp",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "DailySalesSummary"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_SQLDB')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/online_sales')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_BlobStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "online_sales_2024-03-15.csv",
+						"container": "input-data"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "OrderID",
+						"type": "String"
+					},
+					{
+						"name": "OrderDate",
+						"type": "String"
+					},
+					{
+						"name": "CustomerID",
+						"type": "String"
+					},
+					{
+						"name": "Amount",
+						"type": "String"
+					},
+					{
+						"name": "Product",
+						"type": "String"
+					},
+					{
+						"name": "Category",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_BlobStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/stores_sales')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_BlobStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "stores_sales_2024-03-15.csv",
+						"container": "input-data"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "OrderID",
+						"type": "String"
+					},
+					{
+						"name": "OrderDate",
+						"type": "String"
+					},
+					{
+						"name": "CustomerID",
+						"type": "String"
+					},
+					{
+						"name": "Amount",
+						"type": "String"
+					},
+					{
+						"name": "Product",
+						"type": "String"
+					},
+					{
+						"name": "Category",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_BlobStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_BlobStorage')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('LS_BlobStorage_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_SQLDB')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('LS_SQLDB_properties_typeProperties_server')]",
+					"database": "[parameters('LS_SQLDB_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('LS_SQLDB_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('LS_SQLDB_password')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DF_Combine_Sales')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "online_sales",
+								"type": "DatasetReference"
+							},
+							"name": "online"
+						},
+						{
+							"dataset": {
+								"referenceName": "stores_sales",
+								"type": "DatasetReference"
+							},
+							"name": "stores"
+						},
+						{
+							"dataset": {
+								"referenceName": "app_sales",
+								"type": "DatasetReference"
+							},
+							"name": "app"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "destination_db_blob_to_sql",
+								"type": "DatasetReference"
+							},
+							"name": "sinktosql"
+						}
+					],
+					"transformations": [
+						{
+							"name": "unionall"
+						},
+						{
+							"name": "addsourcecolumn"
+						},
+						{
+							"name": "filtervalidrows"
+						},
+						{
+							"name": "aggregatebycategory"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          OrderID as short,",
+						"          OrderDate as date,",
+						"          CustomerID as string,",
+						"          Amount as double,",
+						"          Product as string,",
+						"          Category as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> online",
+						"source(output(",
+						"          OrderID as short,",
+						"          OrderDate as date,",
+						"          CustomerID as string,",
+						"          Amount as double,",
+						"          Product as string,",
+						"          Category as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> stores",
+						"source(output(",
+						"          OrderID as short,",
+						"          OrderDate as date,",
+						"          CustomerID as string,",
+						"          Amount as double,",
+						"          Product as string,",
+						"          Category as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> app",
+						"app, online, stores union(byName: true)~> unionall",
+						"unionall derive(SourceSystem = case(endsWith(toString(byName('OrderID')), '1'), 'Online',",
+						"     endsWith(toString(byName('OrderID')), '2'), 'Stores',",
+						"     'App')) ~> addsourcecolumn",
+						"addsourcecolumn filter(toDecimal(Amount) > 0 && !isNull(CustomerID)) ~> filtervalidrows",
+						"filtervalidrows aggregate(groupBy(OrderDate,",
+						"          Category),",
+						"     TotalAmount = sum(Amount),",
+						"          OrderCount = count(OrderID),",
+						"          SourceCount = countDistinct(SourceSystem)) ~> aggregatebycategory",
+						"aggregatebycategory sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          OrderDate as date,",
+						"          Category as string,",
+						"          TotalAmount as decimal(10,2),",
+						"          OrderCount as integer,",
+						"          SourceCount as integer,",
+						"          LoadTimestamp as timestamp",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> sinktosql"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/online_sales')]",
+				"[concat(variables('factoryId'), '/datasets/stores_sales')]",
+				"[concat(variables('factoryId'), '/datasets/app_sales')]",
+				"[concat(variables('factoryId'), '/datasets/destination_db_blob_to_sql')]"
+			]
+		}
+	]
+}
