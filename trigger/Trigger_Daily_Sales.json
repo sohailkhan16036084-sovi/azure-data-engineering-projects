@@ -1,0 +1,27 @@
+{
+	"name": "Trigger_Daily_Sales",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "PL_Customer360",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"ProcessingDate": "@trigger().scheduledTime"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Hour",
+				"interval": 2,
+				"startTime": "2026-03-12T11:48:00",
+				"timeZone": "GMT Standard Time"
+			}
+		}
+	}
+}
