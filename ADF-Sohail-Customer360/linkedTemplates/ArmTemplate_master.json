@@ -27,6 +27,10 @@
 			"type": "string",
 			"defaultValue": "CloudSA9bb90d82"
 		},
+		"Trigger_Daily_Sales_properties_PL_Customer360_parameters_ProcessingDate": {
+			"type": "string",
+			"defaultValue": "@trigger().scheduledTime"
+		},
 		"containerUri": {
 			"type": "string",
 			"metadata": "URI to storage account containing linked ARM templates"
@@ -68,6 +72,9 @@
 					},
 					"LS_SQLDB_properties_typeProperties_userName": {
 						"value": "[parameters('LS_SQLDB_properties_typeProperties_userName')]"
+					},
+					"Trigger_Daily_Sales_properties_PL_Customer360_parameters_ProcessingDate": {
+						"value": "[parameters('Trigger_Daily_Sales_properties_PL_Customer360_parameters_ProcessingDate')]"
 					}
 				}
 			},

@@ -19,6 +19,9 @@
 		},
 		"LS_SQLDB_properties_typeProperties_userName": {
 			"value": "CloudSA9bb90d82"
+		},
+		"Trigger_Daily_Sales_properties_PL_Customer360_parameters_ProcessingDate": {
+			"value": "@trigger().scheduledTime"
 		}
 	}
 }

@@ -26,6 +26,10 @@
 		"LS_SQLDB_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "CloudSA9bb90d82"
+		},
+		"Trigger_Daily_Sales_properties_PL_Customer360_parameters_ProcessingDate": {
+			"type": "string",
+			"defaultValue": "@trigger().scheduledTime"
 		}
 	},
 	"variables": {
@@ -586,6 +590,38 @@
 				"[concat(variables('factoryId'), '/datasets/stores_sales')]",
 				"[concat(variables('factoryId'), '/datasets/app_sales')]",
 				"[concat(variables('factoryId'), '/dataflows/DF_Combine_Sales')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Trigger_Daily_Sales')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "PL_Customer360",
+							"type": "PipelineReference"
+						},
+						"parameters": {
+							"ProcessingDate": "[parameters('Trigger_Daily_Sales_properties_PL_Customer360_parameters_ProcessingDate')]"
+						}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Hour",
+						"interval": 2,
+						"startTime": "2026-03-12T11:48:00",
+						"timeZone": "GMT Standard Time"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/PL_Customer360')]"
 			]
 		}
 	]
