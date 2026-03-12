@@ -1,0 +1,39 @@
+# Azure Data Engineering Projects
+
+## 📊 Customer 360 Sales Pipeline
+
+An end-to-end ETL pipeline built with Azure Data Factory that combines daily sales from three sources (online, stores, app) into a single aggregated view for reporting.
+
+### 🏗️ Architecture
+- **Source**: CSV files in Azure Blob Storage
+- **Validation**: Get Metadata + If Condition to verify file existence
+- **Transformations**: Data Flow with Union, Derived Column, Filter, Aggregate
+- **Destination**: Azure SQL Database
+
+### 🔧 Key Features
+- ✅ Dynamic parameters for date-based processing
+- ✅ File validation before processing
+- ✅ Source tracking (Online/Stores/App)
+- ✅ Data cleansing (remove invalid records)
+- ✅ Aggregated reporting by category
+- ✅ Git-integrated CI/CD ready
+
+### 📈 Sample Output
+| Category | TotalAmount | OrderCount | SourceCount |
+|----------|-------------|------------|-------------|
+| Electronics | 1892.97 | 8 | 3 |
+| Furniture | 539.99 | 2 | 1 |
+| Media | 44.98 | 2 | 2 |
+| Stationery | 38.49 | 2 | 1 |
+
+### 🚀 How to Deploy
+1. Clone this repository
+2. Deploy ARM template to your Azure subscription
+3. Configure linked services with your credentials
+4. Trigger the pipeline
+
+### 📸 Screenshots
+(Add screenshots of pipeline, data flow, and SQL results here)
+
+### 👨‍💻 Author
+[Your Name] - Aspiring Azure Data Engineer
